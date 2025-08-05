@@ -1,31 +1,52 @@
 import pygame
+from game_config import GameConfig
+from model_inference import generate_game_config
 import sys
 import random
-from typing import Tuple
 
-pygame.init()
+
+game_config: GameConfig = GameConfig({
+    "paddle_width": 15,
+    "paddle_height": 100,
+    "ball_radius": 10,
+    "background_color": {
+        "red": 255,
+        "green": 255,
+        "blue": 255,
+    },
+    "ball_color": {
+        "red": 231,
+        "green": 19,
+        "blue": 36,
+    },
+    "paddle_color": {
+        "red": 53,
+        "green": 0,
+        "blue": 172,
+    },
+    "text_color": {
+        "red": 0,
+        "green": 0,
+        "blue": 0,
+    },
+    "text_background_color": {
+        "red": 245,
+        "green": 246,
+        "blue": 247,
+    },
+    "paddle_speed": 7.0,
+    "ball_initial_speed": 5.0,
+    "ball_acceleration_factor": 0.1,
+})
+
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
-PADDLE_WIDTH = 15
-PADDLE_HEIGHT = 100
-BALL_RADIUS = 10
-
-BACKGROUND_COLOR = (255, 255, 255)
-BALL_COLOR = (231, 19, 36)
-PADDLE_COLOR = (53, 0, 172)
-
-TEXT_COLOR = (0, 0, 0)
-TEXT_BACKGROUND = (245, 246, 247)
-SNAPDRAGON_RED = (231, 19, 36)
-
-PADDLE_SPEED = 7
-BALL_INITIAL_SPEED = 5
-BALL_ACCELERATION_FACTOR = 0.1
-
 MAX_SCORE = 5
 last_scored_player = 1
+
+pygame.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Two-Player Pong")
@@ -102,7 +123,7 @@ class Ball(pygame.Rect):
 
     def bounce_x(self):
         self.dx *= -1
-        self.current_speed += BALL_ACCELERATION_FACTOR
+        self.current_speed += game_config.ball_acceleration_factor
 
         # Reapply speed
         self.dx = (1 if self.dx > 0 else -1) * self.current_speed
@@ -138,18 +159,18 @@ def init_game_state():
     input_string = ""
 
     player1_paddle = Paddle(
-        PADDLE_WIDTH,
-        SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2,
-        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED, PADDLE_COLOR
+        game_config.paddle_width,
+        SCREEN_HEIGHT // 2 - game_config.paddle_height // 2,
+        game_config.paddle_width, game_config.paddle_height, game_config.paddle_speed, game_config.paddle_color
     )
     player2_paddle = Paddle(
-        SCREEN_WIDTH - PADDLE_WIDTH * 2,
-        SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2,
-        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED, PADDLE_COLOR
+        SCREEN_WIDTH - game_config.paddle_width * 2,
+        SCREEN_HEIGHT // 2 - game_config.paddle_height // 2,
+        game_config.paddle_width, game_config.paddle_height, game_config.paddle_speed, game_config.paddle_color
     )
 
     ball = Ball(
-        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, BALL_RADIUS, BALL_INITIAL_SPEED, BALL_COLOR
+        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, game_config.ball_radius, game_config.ball_initial_speed, game_config.ball_color
     )
     ball.reset(last_scored_player)
 
@@ -179,6 +200,7 @@ while running:
                 if event.key == pygame.K_RETURN:
                     if input_active:
                         # Do something with input_string
+                        game_config = generate_game_config(game_config)
 
                         input_active = False
 
@@ -229,8 +251,7 @@ while running:
         # Ball collision with paddles
         if ball.colliderect(player1_paddle) or ball.colliderect(player2_paddle):
             # Check if hit on paddle's side (prevents sticking if hit from top/bottom)
-            if (ball.left < player1_paddle.right and ball.right > player1_paddle.left) or \
-               (ball.right > player2_paddle.left and ball.left < player2_paddle.right):
+            if (ball.left < player1_paddle.right and ball.right > player1_paddle.left) or (ball.right > player2_paddle.left and ball.left < player2_paddle.right):
                 ball.bounce_x()
 
             # Prevent ball getting stuck in paddle
@@ -261,16 +282,16 @@ while running:
             ball.reset(last_scored_player)
 
     # Clear screen
-    screen.fill(BACKGROUND_COLOR)
+    screen.fill(game_config.background_color)
 
     player1_paddle.draw()
     player2_paddle.draw()
     ball.draw()
 
     score_text1 = font.render(
-        f"Player 1: {player1_score}", True, TEXT_COLOR)
+        f"Player 1: {player1_score}", True, game_config.text_color)
     score_text2 = font.render(
-        f"Player 2: {player2_score}", True, TEXT_COLOR)
+        f"Player 2: {player2_score}", True, game_config.text_color)
 
     screen.blit(score_text1, (SCREEN_WIDTH // 4 -
                 score_text1.get_width() // 2, 20))
@@ -281,7 +302,8 @@ while running:
     if input_active:
         prompt_text = f"Player {last_scored_player} scored! Enter a prompt to change the game! (Press ENTER):"
 
-        prompt_render = input_font.render(prompt_text, True, TEXT_COLOR)
+        prompt_render = input_font.render(
+            prompt_text, True, game_config.text_color)
         prompt_rect = prompt_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
 
@@ -289,20 +311,20 @@ while running:
 
         input_display_text = input_string + "_"  # Add cursor
 
-        render_wrapped_text(screen, input_display_text, input_font, TEXT_COLOR, TEXT_BACKGROUND,
+        render_wrapped_text(screen, input_display_text, input_font, game_config.text_color, game_config.text_background_color,
                             SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
 
     # Final game over message
     if not game_active and not input_active:
         if player1_score >= MAX_SCORE:
             game_over_text = font.render(
-                "Player 1 Wins!", True, TEXT_COLOR)
+                "Player 1 Wins!", True, game_config.text_color)
         else:
             game_over_text = font.render(
-                "Player 2 Wins!", True, TEXT_COLOR)
+                "Player 2 Wins!", True, game_config.text_color)
 
         restart_text = small_font.render(
-            "Press 'R' to Restart or 'Q' to Quit", True, TEXT_COLOR)
+            "Press 'R' to Restart or 'Q' to Quit", True, game_config.text_color)
 
         game_over_rect = game_over_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))

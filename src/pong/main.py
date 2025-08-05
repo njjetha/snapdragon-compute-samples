@@ -1,19 +1,24 @@
 import pygame
 import sys
 import random
+from typing import Tuple
 
 pygame.init()
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-LINE_THICKNESS = 5
+
 PADDLE_WIDTH = 15
 PADDLE_HEIGHT = 100
 BALL_RADIUS = 10
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
+BACKGROUND_COLOR = (255, 255, 255)
+BALL_COLOR = (231, 19, 36)
+PADDLE_COLOR = (53, 0, 172)
+
+TEXT_COLOR = (0, 0, 0)
+TEXT_BACKGROUND = (245, 246, 247)
+SNAPDRAGON_RED = (231, 19, 36)
 
 PADDLE_SPEED = 7
 BALL_INITIAL_SPEED = 5
@@ -24,6 +29,39 @@ last_scored_player = 1
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Two-Player Pong")
+
+
+def render_wrapped_text(
+    surface: pygame.surface.Surface,
+    text: str,
+    font: pygame.font.Font,
+    color: pygame.color.Color,
+    background_color: pygame.color.Color,
+    center_x: int,
+    start_y: int,
+    max_width: int,
+    line_spacing: int = 5
+) -> None:
+
+    words = text.split(' ')
+    lines = []
+    current_line = ""
+
+    for word in words:
+        test_line = current_line + word + " "
+        if font.size(test_line)[0] <= max_width:
+            current_line = test_line
+        else:
+            lines.append(current_line.strip())
+            current_line = word + " "
+    lines.append(current_line.strip())
+
+    y_offset = start_y
+    for line in lines:
+        line_render = font.render(line, True, color, background_color)
+        line_rect = line_render.get_rect(center=(center_x, y_offset))
+        surface.blit(line_render, line_rect)
+        y_offset += font.get_height() + line_spacing
 
 
 class Paddle(pygame.Rect):
@@ -102,16 +140,16 @@ def init_game_state():
     player1_paddle = Paddle(
         PADDLE_WIDTH,
         SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2,
-        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED, WHITE
+        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED, PADDLE_COLOR
     )
     player2_paddle = Paddle(
         SCREEN_WIDTH - PADDLE_WIDTH * 2,
         SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2,
-        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED, WHITE
+        PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_SPEED, PADDLE_COLOR
     )
 
     ball = Ball(
-        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, BALL_RADIUS, BALL_INITIAL_SPEED, WHITE
+        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, BALL_RADIUS, BALL_INITIAL_SPEED, BALL_COLOR
     )
     ball.reset(last_scored_player)
 
@@ -153,7 +191,7 @@ while running:
 
                 # Collect user input
                 else:
-                    if len(input_string) < 15 and event.unicode.isalnum() or event.unicode == " ":
+                    if event.unicode.isalnum() or event.unicode == " ":
                         input_string += event.unicode
 
         # Game is over
@@ -223,20 +261,16 @@ while running:
             ball.reset(last_scored_player)
 
     # Clear screen
-    screen.fill(BLACK)
-
-    # Draw middle line
-    pygame.draw.line(screen, WHITE, (SCREEN_WIDTH // 2, 0),
-                     (SCREEN_WIDTH // 2, SCREEN_HEIGHT), LINE_THICKNESS)
+    screen.fill(BACKGROUND_COLOR)
 
     player1_paddle.draw()
     player2_paddle.draw()
     ball.draw()
 
     score_text1 = font.render(
-        f"Player 1: {player1_score}", True, WHITE)
+        f"Player 1: {player1_score}", True, TEXT_COLOR)
     score_text2 = font.render(
-        f"Player 2: {player2_score}", True, WHITE)
+        f"Player 2: {player2_score}", True, TEXT_COLOR)
 
     screen.blit(score_text1, (SCREEN_WIDTH // 4 -
                 score_text1.get_width() // 2, 20))
@@ -246,30 +280,29 @@ while running:
     # Input Prompt (after score or game over)
     if input_active:
         prompt_text = f"Player {last_scored_player} scored! Enter a prompt to change the game! (Press ENTER):"
-        input_display_text = input_string + "_"  # Add cursor
 
-        prompt_render = input_font.render(prompt_text, True, WHITE)
-        input_render = input_font.render(input_display_text, True, WHITE)
-
+        prompt_render = input_font.render(prompt_text, True, TEXT_COLOR)
         prompt_rect = prompt_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
-        input_rect = input_render.get_rect(
-            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10))
 
         screen.blit(prompt_render, prompt_rect)
-        screen.blit(input_render, input_rect)
+
+        input_display_text = input_string + "_"  # Add cursor
+
+        render_wrapped_text(screen, input_display_text, input_font, TEXT_COLOR, TEXT_BACKGROUND,
+                            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
 
     # Final game over message
     if not game_active and not input_active:
         if player1_score >= MAX_SCORE:
             game_over_text = font.render(
-                "Player 1 Wins!", True, WHITE)
+                "Player 1 Wins!", True, TEXT_COLOR)
         else:
             game_over_text = font.render(
-                "Player 2 Wins!", True, WHITE)
+                "Player 2 Wins!", True, TEXT_COLOR)
 
         restart_text = small_font.render(
-            "Press 'R' to Restart or 'Q' to Quit", True, WHITE)
+            "Press 'R' to Restart or 'Q' to Quit", True, TEXT_COLOR)
 
         game_over_rect = game_over_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))

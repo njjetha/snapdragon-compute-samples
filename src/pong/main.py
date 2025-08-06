@@ -43,13 +43,24 @@ game_config: GameConfig = GameConfig({
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
+FPS = 60
+
 MAX_SCORE = 5
 last_scored_player = 1
+
 
 pygame.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Two-Player Pong")
+pygame.display.set_caption("LLM Pong!")
+
+
+# Fonts
+font = pygame.font.Font(None, 74)
+small_font = pygame.font.Font(None, 12)
+input_font = pygame.font.Font(None, 24)
+
+clock = pygame.time.Clock()
 
 
 def render_wrapped_text(
@@ -147,12 +158,13 @@ class Ball(pygame.Rect):
         pygame.draw.circle(screen, self.color, self.center, self.radius)
 
 
-def init_game_state():
-    global player1_score, player2_score, game_active, input_active
-    global input_string
+def init_game_state(reset_score: bool = False):
+    global player1_score, player2_score, game_active, input_active, input_string
 
-    player1_score = 0
-    player2_score = 0
+    if reset_score:
+        player1_score = 0
+        player2_score = 0
+
     game_active = True
     input_active = False
 
@@ -177,15 +189,8 @@ def init_game_state():
     return player1_paddle, player2_paddle, ball
 
 
-player1_paddle, player2_paddle, ball = init_game_state()
-
-# Fonts
-font = pygame.font.Font(None, 74)
-small_font = pygame.font.Font(None, 12)
-input_font = pygame.font.Font(None, 24)
-
-clock = pygame.time.Clock()
-FPS = 60
+# Initial object setup
+player1_paddle, player2_paddle, ball = init_game_state(True)
 
 # Game Loop
 running = True
@@ -199,8 +204,10 @@ while running:
                 # User is done with input
                 if event.key == pygame.K_RETURN:
                     if input_active:
-                        # Do something with input_string
-                        game_config = generate_game_config(game_config)
+                        game_config = generate_game_config(
+                            input_string, game_config)
+
+                        player1_paddle, player2_paddle, ball = init_game_state()
 
                         input_active = False
 
@@ -213,15 +220,15 @@ while running:
 
                 # Collect user input
                 else:
-                    if event.unicode.isalnum() or event.unicode == " ":
-                        input_string += event.unicode
+                    input_string += event.unicode
 
         # Game is over
         if not game_active and not input_active:
             if event.type == pygame.KEYDOWN:
                 # "R" to restart the game
                 if event.key == pygame.K_r:
-                    player1_paddle, player2_paddle, ball = init_game_state()
+                    player1_paddle, player2_paddle, ball = init_game_state(
+                        True)
 
                 # "Q" to quit the game
                 if event.key == pygame.K_q:
@@ -278,8 +285,6 @@ while running:
             else:
                 # Activate input after score, game still active
                 input_active = True
-
-            ball.reset(last_scored_player)
 
     # Clear screen
     screen.fill(game_config.background_color)

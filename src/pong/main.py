@@ -2,6 +2,8 @@ import pygame
 from game_config import GameConfig
 from model_inference import generate_game_config
 from time import sleep
+from enum import Enum, auto
+from typing import Tuple
 import sys
 import random
 
@@ -58,16 +60,17 @@ running: bool = True
 
 pygame.init()
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen: pygame.surface.Surface = pygame.display.set_mode(
+    (SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("LLM Pong!")
 
 
 # Fonts
-large_font = pygame.font.Font(None, 74)
-small_font = pygame.font.Font(None, 18)
-input_font = pygame.font.Font(None, 24)
+large_font: pygame.font.Font = pygame.font.Font(None, 74)
+small_font: pygame.font.Font = pygame.font.Font(None, 18)
+normal_font: pygame.font.Font = pygame.font.Font(None, 24)
 
-clock = pygame.time.Clock()
+clock: pygame.time.Clock = pygame.time.Clock()
 
 
 def render_wrapped_text(
@@ -82,12 +85,12 @@ def render_wrapped_text(
     line_spacing: int = 5
 ) -> None:
 
-    words = text.split(' ')
-    lines = []
-    current_line = ""
+    words: list[str] = text.split(' ')
+    lines: list[str] = []
+    current_line: str = ""
 
     for word in words:
-        test_line = current_line + word + " "
+        test_line: str = current_line + word + " "
         if font.size(test_line)[0] <= max_width:
             current_line = test_line
         else:
@@ -95,24 +98,32 @@ def render_wrapped_text(
             current_line = word + " "
     lines.append(current_line.strip())
 
-    y_offset = start_y
+    y_offset: int = start_y
     for line in lines:
-        line_render = font.render(line, True, color, background_color)
-        line_rect = line_render.get_rect(center=(center_x, y_offset))
+        line_render: pygame.surface.Surface = font.render(
+            line, True, color, background_color)
+        line_rect: pygame.Rect = line_render.get_rect(
+            center=(center_x, y_offset))
         surface.blit(line_render, line_rect)
         y_offset += font.get_height() + line_spacing
 
 
+class Direction(Enum):
+    Up = auto()
+    Down = auto()
+
+
 class Paddle(pygame.Rect):
-    def __init__(self, x, y, width, height, speed, color):
+    def __init__(self, x: float, y: float, width: float, height: float, speed: float, color: pygame.color.Color):
         super().__init__(x, y, width, height)
+
         self.speed = speed
         self.color = color
 
-    def move(self, direction):
-        if direction == "up":
+    def move(self, direction: Direction):
+        if direction == Direction.Up:
             self.y -= self.speed
-        elif direction == "down":
+        elif direction == Direction.Down:
             self.y += self.speed
 
         # Keep paddle within screen bounds
@@ -126,8 +137,9 @@ class Paddle(pygame.Rect):
 
 
 class Ball(pygame.Rect):
-    def __init__(self, x, y, radius, speed, color):
+    def __init__(self, x: float, y: float, radius: float, speed: float, color: pygame.color.Color):
         super().__init__(x - radius, y - radius, radius * 2, radius * 2)
+
         self.radius = radius
         self.color = color
         self.initial_speed = speed
@@ -150,7 +162,10 @@ class Ball(pygame.Rect):
     def bounce_y(self):
         self.dy *= -1
 
-    def reset(self, last_scored_player):
+    def reset(self, last_scored_player: int):
+        assert last_scored_player in [
+            1, 2], f"last_scored_player has to be either 1 or 2 but was {last_scored_player}"
+
         self.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.current_speed = self.initial_speed
 
@@ -168,7 +183,7 @@ class Ball(pygame.Rect):
 def show_start_screen():
     global running
 
-    waiting_for_start = True
+    waiting_for_start: bool = True
     while waiting_for_start:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -189,7 +204,7 @@ def show_start_screen():
         screen.blit(title_text, title_rect)
 
         # Instructions
-        start_instruction_text = input_font.render(
+        start_instruction_text = normal_font.render(
             "Press any key to start", True, game_config.text_color)
         start_instruction_rect = start_instruction_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
@@ -205,7 +220,7 @@ def show_start_screen():
         clock.tick(FPS)
 
 
-def init_game_state(reset_score: bool = False):
+def init_game_state(reset_score: bool = False) -> Tuple[Paddle, Paddle, Ball]:
     global player1_score, player2_score, game_active, input_active, countdown_active, input_string
 
     if reset_score:
@@ -252,7 +267,7 @@ while running:
                 # User is done with input
                 if event.key == pygame.K_RETURN:
                     if input_active:
-                        model_loading_render = input_font.render(
+                        model_loading_render = normal_font.render(
                             "The on-device model is generating your game!", True, game_config.text_color)
                         model_loading_rect = model_loading_render.get_rect(
                             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
@@ -292,19 +307,19 @@ while running:
                     running = False
 
     # Player controls
-    keys = pygame.key.get_pressed()
+    keys: pygame.key.ScancodeWrapper = pygame.key.get_pressed()
     if game_active and not input_active and not countdown_active:
         # Player 1 controls (W, S)
         if keys[pygame.K_w]:
-            player1_paddle.move("up")
+            player1_paddle.move(Direction.Up)
         if keys[pygame.K_s]:
-            player1_paddle.move("down")
+            player1_paddle.move(Direction.Down)
 
         # Player 2 controls (Up Arrow, Down Arrow)
         if keys[pygame.K_UP]:
-            player2_paddle.move("up")
+            player2_paddle.move(Direction.Up)
         if keys[pygame.K_DOWN]:
-            player2_paddle.move("down")
+            player2_paddle.move(Direction.Down)
 
         ball.move()
 
@@ -325,7 +340,7 @@ while running:
                 ball.right = player2_paddle.left
 
         # Scoring (ball out of bounds)
-        scored = False
+        scored: bool = False
         if ball.left <= 0:
             player2_score += 1
             last_scored_player = 2  # Player 2 scored
@@ -362,9 +377,9 @@ while running:
 
     # Input Prompt (after score or game over)
     if input_active:
-        prompt_text = f"Player {last_scored_player} scored! Enter a prompt to change the game! (Press ENTER):"
+        prompt_text: str = f"Player {last_scored_player} scored! Enter a prompt to change the game! (Press ENTER):"
 
-        prompt_render = input_font.render(
+        prompt_render = normal_font.render(
             prompt_text, True, game_config.text_color)
         prompt_rect = prompt_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
@@ -373,12 +388,12 @@ while running:
 
         input_display_text = input_string + "_"  # Add cursor
 
-        render_wrapped_text(screen, input_display_text, input_font, game_config.text_color, game_config.text_background_color,
+        render_wrapped_text(screen, input_display_text, normal_font, game_config.text_color, game_config.text_background_color,
                             SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
 
     # Countdown screen before a round begins
     if countdown_active:
-        countdown_render = input_font.render(
+        countdown_render = normal_font.render(
             f"Round starting in {current_countdown}...", True, game_config.text_color)
         countdown_rect = countdown_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))

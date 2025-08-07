@@ -206,7 +206,7 @@ def show_start_screen() -> None:
 
         # Title
         title_text = large_font.render(
-            "LLM Pong!", True, game_config.text_color)
+            "Prompt Pong!", True, game_config.text_color)
         title_rect = title_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
         screen.blit(title_text, title_rect)
@@ -219,7 +219,7 @@ def show_start_screen() -> None:
         screen.blit(start_instruction_text, start_instruction_rect)
 
         credit_text = small_font.render(
-            "Powered by Snapdragon X Elite & Pygame", True, game_config.text_color)
+            "Powered by Snapdragon X Elite", True, game_config.text_color)
         credit_rect = credit_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
         screen.blit(credit_text, credit_rect)

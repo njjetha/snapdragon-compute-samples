@@ -10,9 +10,10 @@ import openai
 from foundry_local import FoundryLocalManager
 from game_config import GameConfig
 import json
-
 from pprint import pprint
 
+
+# "deepseek-r1-7b"  # "phi-4-mini-reasoning"
 MODEL_NAME = "phi-3.5-mini"
 
 
@@ -126,7 +127,7 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
                 model=manager.get_model_info(MODEL_NAME).id,
                 messages=[{
                     "role": "user",
-                    "content": f"What should the new configuration of the game of pong be based on the prompt: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON, {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was {json.dumps(previous_config.to_dict())}"
+                    "content": f"What should the new configuration of the game of pong be based on the prompt: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON, {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON with all of its properties. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was {json.dumps(previous_config.to_dict())}"
                 }],
                 max_completion_tokens=1024,
                 tools=tools,
@@ -149,11 +150,11 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
 
             # remove any formatting
             cleaned_result = cleaned_result.replace(
-                '```', '').replace('json', '')
+                '```', '').replace('json', '').replace('<response>', '')
+
+            pprint(cleaned_result)
 
             cleaned_result_json = json.loads(cleaned_result)
-
-            pprint(cleaned_result_json)
 
             return GameConfig(cleaned_result_json)
 
@@ -163,9 +164,10 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
             print(f"Content that caused the error: '{cleaned_result}'")
 
             retry_count += 1
+
         except Exception as e:
             print(
-                f"An unexpected error occurred during API call or processing: {e}")
+                f"An unexpected error occurred: {e}")
 
             retry_count += 1
 

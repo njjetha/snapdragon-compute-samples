@@ -1,3 +1,11 @@
+# -----------------------------------------------------------------------------
+#
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# -----------------------------------------------------------------------------
+
+
 import pygame
 from game_config import GameConfig
 from model_inference import generate_game_config
@@ -114,13 +122,13 @@ class Direction(Enum):
 
 
 class Paddle(pygame.Rect):
-    def __init__(self, x: float, y: float, width: float, height: float, speed: float, color: pygame.color.Color):
+    def __init__(self, x: float, y: float, width: float, height: float, speed: float, color: pygame.color.Color) -> None:
         super().__init__(x, y, width, height)
 
         self.speed = speed
         self.color = color
 
-    def move(self, direction: Direction):
+    def move(self, direction: Direction) -> None:
         if direction == Direction.Up:
             self.y -= self.speed
         elif direction == Direction.Down:
@@ -132,12 +140,12 @@ class Paddle(pygame.Rect):
         if self.bottom > SCREEN_HEIGHT:
             self.bottom = SCREEN_HEIGHT
 
-    def draw(self):
+    def draw(self) -> None:
         pygame.draw.rect(screen, self.color, self)
 
 
 class Ball(pygame.Rect):
-    def __init__(self, x: float, y: float, radius: float, speed: float, color: pygame.color.Color):
+    def __init__(self, x: float, y: float, radius: float, speed: float, color: pygame.color.Color) -> None:
         super().__init__(x - radius, y - radius, radius * 2, radius * 2)
 
         self.radius = radius
@@ -147,11 +155,11 @@ class Ball(pygame.Rect):
         self.dx = random.choice([-1, 1]) * self.current_speed
         self.dy = random.choice([-1, 1]) * self.current_speed
 
-    def move(self):
+    def move(self) -> None:
         self.x += self.dx
         self.y += self.dy
 
-    def bounce_x(self):
+    def bounce_x(self) -> None:
         self.dx *= -1
         self.current_speed += game_config.ball_acceleration_factor
 
@@ -159,10 +167,10 @@ class Ball(pygame.Rect):
         self.dx = (1 if self.dx > 0 else -1) * self.current_speed
         self.dy = (1 if self.dy > 0 else -1) * self.current_speed
 
-    def bounce_y(self):
+    def bounce_y(self) -> None:
         self.dy *= -1
 
-    def reset(self, last_scored_player: int):
+    def reset(self, last_scored_player: int) -> None:
         assert last_scored_player in [
             1, 2], f"last_scored_player has to be either 1 or 2 but was {last_scored_player}"
 
@@ -176,11 +184,11 @@ class Ball(pygame.Rect):
 
         self.dy = random.choice([-1, 1]) * self.current_speed
 
-    def draw(self):
+    def draw(self) -> None:
         pygame.draw.circle(screen, self.color, self.center, self.radius)
 
 
-def show_start_screen():
+def show_start_screen() -> None:
     global running
 
     waiting_for_start: bool = True

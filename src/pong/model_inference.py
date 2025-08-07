@@ -5,7 +5,7 @@ import json
 
 from pprint import pprint
 
-MODEL_NAME = "phi-3.5-mini"  # "deepseek-r1-7b"
+MODEL_NAME = "phi-3.5-mini"
 
 
 manager = FoundryLocalManager(MODEL_NAME)
@@ -123,6 +123,8 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
                 max_completion_tokens=1024,
                 tools=tools,
             )
+
+            print("try #", retry_count)
 
             result = response.choices[0].message.content
 

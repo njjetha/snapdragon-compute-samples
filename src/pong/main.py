@@ -1,6 +1,7 @@
 import pygame
 from game_config import GameConfig
 from model_inference import generate_game_config
+from time import sleep
 import sys
 import random
 
@@ -40,13 +41,19 @@ game_config: GameConfig = GameConfig({
 })
 
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH: int = 800
+SCREEN_HEIGHT: int = 600
 
-FPS = 60
+FPS: int = 60
 
-MAX_SCORE = 5
-last_scored_player = 1
+MAX_SCORE: int = 5
+last_scored_player: int = 1
+
+MAX_COUNTDOWN: int = 3
+current_countdown: int = MAX_COUNTDOWN
+countdown_active: bool = True  # The first round starts with a countdown
+
+running: bool = True
 
 
 pygame.init()
@@ -56,8 +63,8 @@ pygame.display.set_caption("LLM Pong!")
 
 
 # Fonts
-font = pygame.font.Font(None, 74)
-small_font = pygame.font.Font(None, 12)
+large_font = pygame.font.Font(None, 74)
+small_font = pygame.font.Font(None, 18)
 input_font = pygame.font.Font(None, 24)
 
 clock = pygame.time.Clock()
@@ -158,8 +165,48 @@ class Ball(pygame.Rect):
         pygame.draw.circle(screen, self.color, self.center, self.radius)
 
 
+def show_start_screen():
+    global running
+
+    waiting_for_start = True
+    while waiting_for_start:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                waiting_for_start = False
+
+        screen.fill(game_config.background_color)
+
+        # Title
+        title_text = large_font.render(
+            "LLM Pong!", True, game_config.text_color)
+        title_rect = title_text.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+        screen.blit(title_text, title_rect)
+
+        # Instructions
+        start_instruction_text = input_font.render(
+            "Press any key to start", True, game_config.text_color)
+        start_instruction_rect = start_instruction_text.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+        screen.blit(start_instruction_text, start_instruction_rect)
+
+        credit_text = small_font.render(
+            "Powered by Snapdragon X Elite & Pygame", True, game_config.text_color)
+        credit_rect = credit_text.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
+        screen.blit(credit_text, credit_rect)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 def init_game_state(reset_score: bool = False):
-    global player1_score, player2_score, game_active, input_active, input_string
+    global player1_score, player2_score, game_active, input_active, countdown_active, input_string
 
     if reset_score:
         player1_score = 0
@@ -189,11 +236,12 @@ def init_game_state(reset_score: bool = False):
     return player1_paddle, player2_paddle, ball
 
 
+show_start_screen()
+
 # Initial object setup
 player1_paddle, player2_paddle, ball = init_game_state(True)
 
-# Game Loop
-running = True
+# Main game Loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -204,11 +252,20 @@ while running:
                 # User is done with input
                 if event.key == pygame.K_RETURN:
                     if input_active:
+                        model_loading_render = input_font.render(
+                            "The on-device model is generating your game!", True, game_config.text_color)
+                        model_loading_rect = model_loading_render.get_rect(
+                            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+
+                        screen.blit(model_loading_render, model_loading_rect)
+                        pygame.display.flip()
+
                         game_config = generate_game_config(
                             input_string, game_config)
 
                         player1_paddle, player2_paddle, ball = init_game_state()
 
+                        countdown_active = True
                         input_active = False
 
                     # Clear input for next time
@@ -236,7 +293,7 @@ while running:
 
     # Player controls
     keys = pygame.key.get_pressed()
-    if game_active and not input_active:
+    if game_active and not input_active and not countdown_active:
         # Player 1 controls (W, S)
         if keys[pygame.K_w]:
             player1_paddle.move("up")
@@ -293,9 +350,9 @@ while running:
     player2_paddle.draw()
     ball.draw()
 
-    score_text1 = font.render(
+    score_text1 = large_font.render(
         f"Player 1: {player1_score}", True, game_config.text_color)
-    score_text2 = font.render(
+    score_text2 = large_font.render(
         f"Player 2: {player2_score}", True, game_config.text_color)
 
     screen.blit(score_text1, (SCREEN_WIDTH // 4 -
@@ -319,13 +376,31 @@ while running:
         render_wrapped_text(screen, input_display_text, input_font, game_config.text_color, game_config.text_background_color,
                             SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
 
+    # Countdown screen before a round begins
+    if countdown_active:
+        countdown_render = input_font.render(
+            f"Round starting in {current_countdown}...", True, game_config.text_color)
+        countdown_rect = countdown_render.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))
+
+        ball_direction_render = large_font.render(
+            "->" if last_scored_player == 1 else "<-", True, game_config.text_color)
+        ball_direction_rect = ball_direction_render.get_rect(
+            center=(SCREEN_WIDTH // 2 + (40 if last_scored_player ==
+                    1 else -40), SCREEN_HEIGHT // 2 - 2))
+
+        screen.blit(countdown_render, countdown_rect)
+        screen.blit(ball_direction_render, ball_direction_rect)
+
+        current_countdown -= 1
+
     # Final game over message
-    if not game_active and not input_active:
+    if not game_active and not input_active and not countdown_active:
         if player1_score >= MAX_SCORE:
-            game_over_text = font.render(
+            game_over_text = large_font.render(
                 "Player 1 Wins!", True, game_config.text_color)
         else:
-            game_over_text = font.render(
+            game_over_text = large_font.render(
                 "Player 2 Wins!", True, game_config.text_color)
 
         restart_text = small_font.render(
@@ -339,8 +414,18 @@ while running:
         screen.blit(game_over_text, game_over_rect)
         screen.blit(restart_text, restart_rect)
 
+    # Re-render the game!
     pygame.display.flip()
     clock.tick(FPS)
+
+    # Add a delay between countdown messages
+    if countdown_active:
+        sleep(1)
+
+        # Stop countdown
+        if current_countdown <= 0:
+            current_countdown = MAX_COUNTDOWN
+            countdown_active = False
 
 pygame.quit()
 sys.exit()

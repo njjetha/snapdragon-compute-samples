@@ -12,8 +12,8 @@ from game_config import GameConfig
 import json
 
 
-# "deepseek-r1-7b"  # "phi-4-mini-reasoning"
-MODEL_NAME = "Phi-3.5-mini-instruct-generic-cpu"
+# "Phi-3.5-mini-instruct-generic-cpu"  # "phi-4-mini-reasoning"
+MODEL_NAME = "deepseek-r1-7b"
 
 
 manager = FoundryLocalManager(MODEL_NAME)
@@ -127,27 +127,28 @@ def generate_game_config(prompt: str, last_scored_player: int, previous_config: 
     max_retries = 25
     retry_count = 0
 
+    error = None
+
     while retry_count < max_retries:
         try:
             response = client.chat.completions.create(
                 model=manager.get_model_info(MODEL_NAME).id,
                 messages=[{
                     "role": "user",
-                    "content": f"What should the new configuration of the game of pong be based on the prompt from player {last_scored_player}: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON and no other keys: {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON with all of its properties. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was {json.dumps(previous_config.to_dict())}"
+                    "content": f"What should the new configuration of the game of pong be based on the prompt from player {last_scored_player}: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON and no other keys: {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON with all of its properties. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was: {json.dumps(previous_config.to_dict())}{f"\n\nMake sure the generated game configuration does not result in an error like the last generated game configuration: {error}" if error is not None else ""}"
                 }],
                 temperature=min(1, 0.00001 + (0.15 * retry_count)),
                 max_tokens=4096,
-                # top_p=1.0,
                 tools=tools,
             )
 
+            error = None
+
             print("try #", retry_count)
 
-            result = response.choices[0].message.content
+            result = response.choices[0].message.content.lower()
 
-            result = result.lower()
-
-            # remove think tag
+            # Remove think tag
             think_tag = "</think>"
 
             if think_tag in result:
@@ -156,20 +157,28 @@ def generate_game_config(prompt: str, last_scored_player: int, previous_config: 
             else:
                 cleaned_result = result.strip()
 
-            # remove any unneeded formatting
+            # Remove any unneeded formatting
             cleaned_result = cleaned_result.replace(
                 '```', '').replace('json', '').replace('<response>', '').replace('functools', '')
 
             print(cleaned_result)
 
-            cleaned_result_json = json.loads(cleaned_result)
+            cleaned_result_json: dict = json.loads(cleaned_result)
+
+            # If needed add missing keys
+            previous_config_dict = previous_config.to_dict()
+            prev_keys = set(previous_config_dict.keys())
+            missing_keys = prev_keys - set(cleaned_result_json.keys())
+
+            for key in missing_keys:
+                cleaned_result_json[key] = previous_config_dict[key]
 
             return GameConfig(cleaned_result_json)
 
         except json.JSONDecodeError as e:
-            print(
-                f"JSONDecodeError: Failed to parse JSON from model response. Error: {e}")
-            print(f"Content that caused the error: '{cleaned_result}'")
+            error = f"JSONDecodeError: Failed to parse JSON from model response. Error: {e}\nContent that caused the error: '{cleaned_result}'"
+
+            print(error)
 
             retry_count += 1
 

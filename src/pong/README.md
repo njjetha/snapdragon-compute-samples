@@ -17,12 +17,11 @@ This interactive two-player game of pong showcases the on-device inferencing cap
 
 ## Installation Instructions
 
-1. Make sure you have completed all the [Requirements](#requirements) above
-2. Clone this Github Repository directly on your Snapdragon X Elite device
-    - Use a command such as `REPlACE-ME`
-3. Install Microsoft Foundry local
+1. Clone this Github Repository directly on your Snapdragon X Elite device
+    - Use a command such as `git clone REPlACE-ME`
+2. Install Microsoft Foundry local
     - Follow the following [instructions](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/get-started)
-4. Install Qualcomm® Neural Processing SDK
+3. Install Qualcomm® Neural Processing SDK
     - You can find the SDK on the [Qualcomm Software Center](https://softwarecenter.qualcomm.com/)
 
 

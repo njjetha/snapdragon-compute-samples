@@ -9,11 +9,13 @@
 import pygame
 from game_config import GameConfig
 from model_inference import generate_game_config
+import threading
 from time import sleep
 from enum import Enum, auto
 from typing import Tuple
 import sys
 import random
+
 
 initial_paddle_width: int = 15
 initial_paddle_height: int = 100
@@ -74,12 +76,16 @@ countdown_active: bool = True  # The first round starts with a countdown
 
 running: bool = True
 
+model_loading: bool = False
+model_loading_thread: threading.Thread | None = None
+new_game_config: GameConfig | None = None
+
 
 pygame.init()
 
 screen: pygame.surface.Surface = pygame.display.set_mode(
     (SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("LLM Pong!")
+pygame.display.set_caption("Prompt Pong!")
 
 
 # Fonts
@@ -123,6 +129,13 @@ def render_wrapped_text(
             center=(center_x, y_offset))
         surface.blit(line_render, line_rect)
         y_offset += font.get_height() + line_spacing
+
+
+def load_game_config_in_thread(input_str: str, last_scored_p: int, prev_config: GameConfig) -> None:
+    global new_game_config
+
+    new_game_config = generate_game_config(
+        input_str, last_scored_p, prev_config)
 
 
 class Direction(Enum):
@@ -275,33 +288,34 @@ player1_paddle, player2_paddle, ball = init_game_state(True)
 
 # Main game Loop
 while running:
+    if model_loading and new_game_config is not None and model_loading_thread is not None and not model_loading_thread.is_alive():
+        game_config = new_game_config
+
+        player1_paddle, player2_paddle, ball = init_game_state()
+
+        input_string = ""
+
+        countdown_active = True
+        input_active = False
+
+        model_loading_thread = None
+        new_game_config = None
+
+        model_loading = False
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-        if input_active:
+        if input_active and not model_loading:
             if event.type == pygame.KEYDOWN:
                 # User is done with input
                 if event.key == pygame.K_RETURN:
-                    if input_active:
-                        model_loading_render = normal_font.render(
-                            "The on-device model is generating your game!", True, game_config.text_color)
-                        model_loading_rect = model_loading_render.get_rect(
-                            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+                    model_loading = True
+                    model_loading_thread = threading.Thread(target=load_game_config_in_thread, args=(
+                        input_string, last_scored_player, game_config))
 
-                        screen.blit(model_loading_render, model_loading_rect)
-                        pygame.display.flip()
-
-                        game_config = generate_game_config(
-                            input_string, last_scored_player, game_config)
-
-                        player1_paddle, player2_paddle, ball = init_game_state()
-
-                        countdown_active = True
-                        input_active = False
-
-                    # Clear input for next time
-                    input_string = ""
+                    model_loading_thread.start()
 
                 # User deletes last character
                 elif event.key == pygame.K_BACKSPACE:
@@ -406,7 +420,7 @@ while running:
         input_display_text = input_string + "_"  # Add cursor
 
         render_wrapped_text(screen, input_display_text, normal_font, game_config.text_color, game_config.text_background_color,
-                            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
+                            SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20, SCREEN_WIDTH // 2)
 
     # Countdown screen before a round begins
     if countdown_active:
@@ -429,6 +443,14 @@ while running:
                                 SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
 
         current_countdown -= 1
+
+    if model_loading:
+        model_loading_render = normal_font.render(
+            "The on-device model is generating your game!", True, game_config.text_color)
+        model_loading_rect = model_loading_render.get_rect(
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
+
+        screen.blit(model_loading_render, model_loading_rect)
 
     # Final game over message
     if not game_active and not input_active and not countdown_active:

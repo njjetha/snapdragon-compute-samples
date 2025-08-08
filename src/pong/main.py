@@ -15,10 +15,20 @@ from typing import Tuple
 import sys
 import random
 
+initial_paddle_width: int = 15
+initial_paddle_height: int = 100
+initial_paddle_color: dict[str, int] = {
+    "red": 53,
+    "green": 0,
+    "blue": 172,
+}
+initial_paddle_speed: float = 7.0
 
 game_config: GameConfig = GameConfig({
-    "paddle_width": 15,
-    "paddle_height": 100,
+    "player_1_paddle_width": initial_paddle_width,
+    "player_1_paddle_height": initial_paddle_height,
+    "player_2_paddle_width": initial_paddle_width,
+    "player_2_paddle_height": initial_paddle_height,
     "ball_radius": 10,
     "background_color": {
         "red": 255,
@@ -30,11 +40,8 @@ game_config: GameConfig = GameConfig({
         "green": 19,
         "blue": 36,
     },
-    "paddle_color": {
-        "red": 53,
-        "green": 0,
-        "blue": 172,
-    },
+    "player_1_paddle_color": initial_paddle_color,
+    "player_2_paddle_color": initial_paddle_color,
     "text_color": {
         "red": 0,
         "green": 0,
@@ -45,9 +52,11 @@ game_config: GameConfig = GameConfig({
         "green": 246,
         "blue": 247,
     },
-    "paddle_speed": 7.0,
+    "player_1_paddle_speed": initial_paddle_speed,
+    "player_2_paddle_speed": initial_paddle_speed,
     "ball_initial_speed": 5.0,
     "ball_acceleration_factor": 0.1,
+    "change_summary": "",
 })
 
 
@@ -86,7 +95,7 @@ def render_wrapped_text(
     text: str,
     font: pygame.font.Font,
     color: pygame.color.Color,
-    background_color: pygame.color.Color,
+    background_color: pygame.color.Color | None,
     center_x: int,
     start_y: int,
     max_width: int,
@@ -241,14 +250,14 @@ def init_game_state(reset_score: bool = False) -> Tuple[Paddle, Paddle, Ball]:
     input_string = ""
 
     player1_paddle = Paddle(
-        game_config.paddle_width,
-        SCREEN_HEIGHT // 2 - game_config.paddle_height // 2,
-        game_config.paddle_width, game_config.paddle_height, game_config.paddle_speed, game_config.paddle_color
+        game_config.player_1_paddle_width,
+        SCREEN_HEIGHT // 2 - game_config.player_1_paddle_height // 2,
+        game_config.player_1_paddle_width, game_config.player_1_paddle_height, game_config.player_1_paddle_speed, game_config.player_1_paddle_color
     )
     player2_paddle = Paddle(
-        SCREEN_WIDTH - game_config.paddle_width * 2,
-        SCREEN_HEIGHT // 2 - game_config.paddle_height // 2,
-        game_config.paddle_width, game_config.paddle_height, game_config.paddle_speed, game_config.paddle_color
+        SCREEN_WIDTH - game_config.player_2_paddle_width * 2,
+        SCREEN_HEIGHT // 2 - game_config.player_2_paddle_height // 2,
+        game_config.player_2_paddle_width, game_config.player_2_paddle_height, game_config.player_2_paddle_speed, game_config.player_2_paddle_color
     )
 
     ball = Ball(
@@ -284,7 +293,7 @@ while running:
                         pygame.display.flip()
 
                         game_config = generate_game_config(
-                            input_string, game_config)
+                            input_string, last_scored_player, game_config)
 
                         player1_paddle, player2_paddle, ball = init_game_state()
 
@@ -409,11 +418,15 @@ while running:
         ball_direction_render = large_font.render(
             "->" if last_scored_player == 1 else "<-", True, game_config.text_color)
         ball_direction_rect = ball_direction_render.get_rect(
-            center=(SCREEN_WIDTH // 2 + (40 if last_scored_player ==
-                    1 else -40), SCREEN_HEIGHT // 2 - 2))
+            center=((SCREEN_WIDTH // 4) * (3 if last_scored_player ==
+                    1 else 1), SCREEN_HEIGHT // 2 - 2))
 
         screen.blit(countdown_render, countdown_rect)
         screen.blit(ball_direction_render, ball_direction_rect)
+
+        if game_config.change_summary != "":
+            render_wrapped_text(screen, f"Changes: {game_config.change_summary}", normal_font, game_config.text_color, None,
+                                SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
 
         current_countdown -= 1
 

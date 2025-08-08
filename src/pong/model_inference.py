@@ -10,11 +10,10 @@ import openai
 from foundry_local import FoundryLocalManager
 from game_config import GameConfig
 import json
-from pprint import pprint
 
 
 # "deepseek-r1-7b"  # "phi-4-mini-reasoning"
-MODEL_NAME = "phi-3.5-mini"
+MODEL_NAME = "Phi-3.5-mini-instruct-generic-cpu"
 
 
 manager = FoundryLocalManager(MODEL_NAME)
@@ -25,32 +24,42 @@ client = openai.OpenAI(
 )
 
 required_list = [
-    "paddle_width",
-    "paddle_height",
+    "player_1_paddle_width",
+    "player_1_paddle_height",
+    "player_2_paddle_width",
+    "player_2_paddle_height",
     "ball_radius",
     "background_color",
     "ball_color",
-    "paddle_color",
+    "player_1_paddle_color",
+    "player_2_paddle_color",
     "text_color",
     "text_background_color",
-    "paddle_speed",
+    "player_1_paddle_speed",
+    "player_2_paddle_speed",
     "ball_initial_speed",
-    "ball_acceleration_factor"
+    "ball_acceleration_factor",
+    "change_summary",
 ]
 
-rgb_descriptions = {
-    "red": {
-        "type": "number",
-        "description": "A integer from 0 to 255 representing how bright the red component of this RGB color is",
+color_description = {
+    "type": "object",
+    "properties": {
+        "red": {
+            "type": "number",
+            "description": "A integer from 0 to 255 representing how bright the red component of this RGB color is",
+        },
+        "green": {
+            "type": "number",
+            "description": "A integer from 0 to 255 representing how bright the green component of this RGB color is",
+        },
+        "blue": {
+            "type": "number",
+            "description": "A integer from 0 to 255 representing how bright the blue component of this RGB color is",
+        },
     },
-    "green": {
-        "type": "number",
-        "description": "A integer from 0 to 255 representing how bright the green component of this RGB color is",
-    },
-    "blue": {
-        "type": "number",
-        "description": "A integer from 0 to 255 representing how bright the blue component of this RGB color is",
-    },
+    "required": ["red", "green", "blue"],
+    "additionalProperties": False,
 }
 
 tools = [{
@@ -61,46 +70,39 @@ tools = [{
     "parameters": {
         "type": "object",
         "properties": {
-            "paddle_width": {
+            "player_1_paddle_width": {
                 "type": "number",
-                "description": "The width of the players' paddles"
+                "description": "The width of the player 1's paddle"
             },
-            "paddle_height": {
+            "player_1_paddle_height": {
                 "type": "number",
-                "description": "The height of the players' paddles"
+                "description": "The height of the player 1's paddle"
+            },
+            "player_2_paddle_width": {
+                "type": "number",
+                "description": "The width of the player 2's paddle"
+            },
+            "player_2_paddle_height": {
+                "type": "number",
+                "description": "The height of the player 2's paddle"
             },
             "ball_radius": {
                 "type": "number",
                 "description": "The radius of the ball in the game"
             },
-            "background_color": {
-                "type": "object",
-                "properties": rgb_descriptions,
-                "required": ["red", "green", "blue"]
-            },
-            "ball_color": {
-                "type": "object",
-                "properties": rgb_descriptions,
-                "required": ["red", "green", "blue"]
-            },
-            "paddle_color": {
-                "type": "object",
-                "properties": rgb_descriptions,
-                "required": ["red", "green", "blue"]
-            },
-            "text_color": {
-                "type": "object",
-                "properties": rgb_descriptions,
-                "required": ["red", "green", "blue"]
-            },
-            "text_background_color": {
-                "type": "object",
-                "properties": rgb_descriptions,
-                "required": ["red", "green", "blue"]
-            },
-            "paddle_speed": {
+            "background_color": color_description,
+            "ball_color": color_description,
+            "player_1_paddle_color": color_description,
+            "player_2_paddle_color": color_description,
+            "text_color": color_description,
+            "text_background_color": color_description,
+            "player_1_paddle_speed": {
                 "type": "number",
-                "description": "The speed of the players' paddles"
+                "description": "The speed of the player 1's paddle"
+            },
+            "player_2_paddle_speed": {
+                "type": "number",
+                "description": "The speed of the player 2's paddle"
             },
             "ball_initial_speed": {
                 "type": "number",
@@ -110,6 +112,10 @@ tools = [{
                 "type": "number",
                 "description": "The rate the ball in the game accelerates by"
             },
+            "change_summary": {
+                "type": "string",
+                "description": "A short sentence explaining the changes from the previous game configuration and the current and new game configuration. Make sure the sentence is less than 12 words."
+            },
         },
         "required": required_list,
         "additionalProperties": False
@@ -117,7 +123,7 @@ tools = [{
 }]
 
 
-def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig:
+def generate_game_config(prompt: str, last_scored_player: int, previous_config: GameConfig) -> GameConfig:
     max_retries = 25
     retry_count = 0
 
@@ -127,9 +133,11 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
                 model=manager.get_model_info(MODEL_NAME).id,
                 messages=[{
                     "role": "user",
-                    "content": f"What should the new configuration of the game of pong be based on the prompt: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON, {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON with all of its properties. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was {json.dumps(previous_config.to_dict())}"
+                    "content": f"What should the new configuration of the game of pong be based on the prompt from player {last_scored_player}: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON and no other keys: {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON with all of its properties. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was {json.dumps(previous_config.to_dict())}"
                 }],
-                max_completion_tokens=1024,
+                temperature=min(1, 0.00001 + (0.15 * retry_count)),
+                max_tokens=4096,
+                # top_p=1.0,
                 tools=tools,
             )
 
@@ -148,11 +156,11 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
             else:
                 cleaned_result = result.strip()
 
-            # remove any formatting
+            # remove any unneeded formatting
             cleaned_result = cleaned_result.replace(
-                '```', '').replace('json', '').replace('<response>', '')
+                '```', '').replace('json', '').replace('<response>', '').replace('functools', '')
 
-            pprint(cleaned_result)
+            print(cleaned_result)
 
             cleaned_result_json = json.loads(cleaned_result)
 
@@ -171,5 +179,5 @@ def generate_game_config(prompt: str, previous_config: GameConfig) -> GameConfig
 
             retry_count += 1
 
-        raise ValueError(
-            f"Failed to obtain a valid game configuration from the model after {max_retries} retries")
+    raise ValueError(
+        f"Failed to obtain a valid game configuration from the model after {max_retries} retries")

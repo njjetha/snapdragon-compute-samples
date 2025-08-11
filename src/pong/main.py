@@ -12,7 +12,7 @@ from model_inference import generate_game_config
 import threading
 from time import sleep
 from enum import Enum, auto
-from typing import Tuple
+from typing import Tuple, Any
 import sys
 import random
 
@@ -26,7 +26,8 @@ initial_paddle_color: dict[str, int] = {
 }
 initial_paddle_speed: float = 7.0
 
-game_config: GameConfig = GameConfig({
+
+original_config_dict: dict[str, Any] = {
     "player_1_paddle_width": initial_paddle_width,
     "player_1_paddle_height": initial_paddle_height,
     "player_2_paddle_width": initial_paddle_width,
@@ -59,7 +60,9 @@ game_config: GameConfig = GameConfig({
     "ball_initial_speed": 5.0,
     "ball_acceleration_factor": 0.1,
     "change_summary": "",
-})
+}
+
+game_config: GameConfig = GameConfig(original_config_dict)
 
 
 SCREEN_WIDTH: int = 800
@@ -330,6 +333,10 @@ while running:
             if event.type == pygame.KEYDOWN:
                 # "R" to restart the game
                 if event.key == pygame.K_r:
+                    countdown_active = True
+
+                    game_config = GameConfig(original_config_dict)
+
                     player1_paddle, player2_paddle, ball = init_game_state(
                         True)
 
@@ -440,7 +447,7 @@ while running:
 
         if game_config.change_summary != "":
             render_wrapped_text(screen, f"Changes: {game_config.change_summary}", normal_font, game_config.text_color, None,
-                                SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10, SCREEN_WIDTH // 2)
+                                SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + (game_config.ball_radius + 15), SCREEN_WIDTH * 0.75)
 
         current_countdown -= 1
 

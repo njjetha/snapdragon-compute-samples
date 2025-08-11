@@ -62,72 +62,103 @@ color_description = {
     "additionalProperties": False,
 }
 
-tools = [{
-    "type": "function",
-    "name": "configure_pygame_pong_game",
-    "description": "Configures a game of pong based off of the parameters",
-    "strict": True,
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "player_1_paddle_width": {
-                "type": "number",
-                "description": "The width of the player 1's paddle"
-            },
-            "player_1_paddle_height": {
-                "type": "number",
-                "description": "The height of the player 1's paddle"
-            },
-            "player_2_paddle_width": {
-                "type": "number",
-                "description": "The width of the player 2's paddle"
-            },
-            "player_2_paddle_height": {
-                "type": "number",
-                "description": "The height of the player 2's paddle"
-            },
-            "ball_radius": {
-                "type": "number",
-                "description": "The radius of the ball in the game"
-            },
-            "background_color": color_description,
-            "ball_color": color_description,
-            "player_1_paddle_color": color_description,
-            "player_2_paddle_color": color_description,
-            "text_color": color_description,
-            "text_background_color": color_description,
-            "player_1_paddle_speed": {
-                "type": "number",
-                "description": "The speed of the player 1's paddle"
-            },
-            "player_2_paddle_speed": {
-                "type": "number",
-                "description": "The speed of the player 2's paddle"
-            },
-            "ball_initial_speed": {
-                "type": "number",
-                "description": "The initial speed of the ball in the game"
-            },
-            "ball_acceleration_factor": {
-                "type": "number",
-                "description": "The rate the ball in the game accelerates by"
-            },
-            "change_summary": {
-                "type": "string",
-                "description": "A short sentence explaining the changes from the previous game configuration and the current and new game configuration. Make sure the sentence is less than 12 words."
-            },
+json_scheme = {
+    "type": "object",
+    "properties": {
+        "player_1_paddle_width": {
+            "type": "number",
+            "description": "The width of the player 1's paddle"
         },
-        "required": required_list,
-        "additionalProperties": False
-    }
-}]
+        "player_1_paddle_height": {
+            "type": "number",
+            "description": "The height of the player 1's paddle"
+        },
+        "player_2_paddle_width": {
+            "type": "number",
+            "description": "The width of the player 2's paddle"
+        },
+        "player_2_paddle_height": {
+            "type": "number",
+            "description": "The height of the player 2's paddle"
+        },
+        "ball_radius": {
+            "type": "number",
+            "description": "The radius of the ball in the game"
+        },
+        "background_color": color_description,
+        "ball_color": color_description,
+        "player_1_paddle_color": color_description,
+        "player_2_paddle_color": color_description,
+        "text_color": color_description,
+        "text_background_color": color_description,
+        "player_1_paddle_speed": {
+            "type": "number",
+            "description": "The speed of the player 1's paddle"
+        },
+        "player_2_paddle_speed": {
+            "type": "number",
+            "description": "The speed of the player 2's paddle"
+        },
+        "ball_initial_speed": {
+            "type": "number",
+            "description": "The initial speed of the ball in the game"
+        },
+        "ball_acceleration_factor": {
+            "type": "number",
+            "description": "The rate the ball in the game accelerates by"
+        },
+        "change_summary": {
+            "type": "string",
+            "description": "A short sentence explaining the changes from the previous game configuration and the current and new game configuration. Make sure the sentence is less than 12 words."
+        },
+    },
+    "required": required_list,
+    "additionalProperties": False
+}
 
 
-def generate_game_config(prompt: str, last_scored_player: int, previous_config: GameConfig) -> GameConfig:
+def generate_game_config(user_prompt: str, last_scored_player: int, previous_config: GameConfig) -> GameConfig:
     max_retries = 25
     retry_count = 0
 
     error = None
+
+    ai_prompt = f"""
+    <goal>
+    Generate a new configuration for the Pong game using the provided player prompt and context. The configuration must comply with the json_schema.
+    </goal>
+
+    <instructions>
+    - Use the prompt from player {last_scored_player}: {user_prompt}.
+    - Return ONLY a valid JSON object that matches the schema outlined below.
+    - The JSON must include ALL of the following required keys and no others:
+    {', '.join(required_list)}.
+    - Do NOT include any notes, explanations, or extra properties.
+    - Do NOT change anything in the game configuration that is not being addressed in the player prompt.
+    - Only change what is needed from the previous configuration:
+    {json.dumps(previous_config.to_dict())}.
+    {f"- Avoid errors similar to the last configuration issue: {error}" if error is not None else ""}
+    - The `change_summary` must be a short sentence (under 12 words) describing the difference between the previous and new configuration.
+    </instructions>
+
+    <json_scheme>
+    {json_scheme}
+    </json_scheme>
+
+    <output_contract>
+    - Output MUST be a single JSON object.
+    - Output MUST start with "{" and end with "}".
+    - Do NOT include any prose, comments, code fences, or explanations.
+    - Do NOT include markdown, backticks, or surrounding text.
+    - Use ONLY double-quoted keys and string values.
+    - No trailing commas, NaN, Infinity, undefined, or comments.
+    - All numeric values must be valid JSON numbers (integers or decimals).
+    </output_contract>
+
+    <output>
+    Respond ONLY with the valid JSON object containing all required properties.
+    </output>
+    """
 
     while retry_count < max_retries:
         try:
@@ -135,11 +166,10 @@ def generate_game_config(prompt: str, last_scored_player: int, previous_config: 
                 model=manager.get_model_info(MODEL_NAME).id,
                 messages=[{
                     "role": "user",
-                    "content": f"What should the new configuration of the game of pong be based on the prompt from player {last_scored_player}: {prompt}. Only send back all of the arguments for the tool in a valid JSON format. Make sure the following keys are in the JSON and no other keys: {', '.join(required_list)}. DO NOT respond with any notes or explanations, only respond with the valid JSON with all of its properties. Make sure the new configuration is not the same as the previous game configuration. The previous game configuration was: {json.dumps(previous_config.to_dict())}{f"\n\nMake sure the generated game configuration does not result in an error like the last generated game configuration: {error}" if error is not None else ""}"
+                    "content": ai_prompt
                 }],
                 temperature=min(1, 0.00001 + (0.15 * retry_count)),
                 max_tokens=4096,
-                tools=tools,
             )
 
             error = None

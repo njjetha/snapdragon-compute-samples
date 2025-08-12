@@ -53,7 +53,7 @@ This interactive two-player game of pong showcases the on-device inferencing cap
         <li><a href="./game_config.py" target="_blank">game_config.py</a>: contains a class that configures the Pong game</li>
     </ul>
     <h3>Model Inferencing</h3>
-    <img src="./images/prompt_pong_model_sequence.jpg" style="min-width: 480px; max-width: 65%; height: auto;"/>
+    <img src="./images/prompt_pong_model_sequence.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
     <p>Between points being scored, the winner of that round is asked to provide a prompt to change the game. Once the player sends a prompt, the prompt and previous game configuration are sent to a Foundry Local model on a separate thread. Once the model returns the new game configuration, the game loop and game logic are re-rendered and the game continues until 5 points are scored.</p>
     <h4>System Prompt Methodology</h4>
     <p>When designing the prompt for the Foundry Local model, it was important to first understand the <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/reference/reference-rest" target="_blank">constraints and parameters</a>. A low temperature and set max_tokens were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added. The final prompt was created based on system prompts of other popular ai tools.</p>

@@ -16,6 +16,8 @@ import json
 MODEL_NAME = "deepseek-r1-7b"
 
 
+print("Loading Foundry Local model...")
+
 manager = FoundryLocalManager(MODEL_NAME)
 
 client = openai.OpenAI(
@@ -109,7 +111,7 @@ json_scheme = {
         },
         "change_summary": {
             "type": "string",
-            "description": "A short sentence explaining the changes from the previous game configuration and the current and new game configuration. Make sure the sentence is less than 12 words."
+            "description": "A short sentence explaining the changes from the previous game configuration and the current new game configuration. Make sure the sentence is less than 12 words."
         },
     },
     "required": required_list,
@@ -125,20 +127,19 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
 
     ai_prompt = f"""
     <goal>
-    Generate a new configuration for the Pong game using the provided player prompt and context. The configuration must comply with the json_schema.
+    Generate a new configuration for the Pong game using the provided player {last_scored_player} prompt, "{user_prompt}", and context. The configuration must comply with the json_schema.
     </goal>
 
     <instructions>
-    - Use the prompt from player {last_scored_player}: {user_prompt}.
+    - Use the following prompt from player {last_scored_player} to change the game configuration: "{user_prompt}".
     - Return ONLY a valid JSON object that matches the schema outlined below.
     - The JSON must include ALL of the following required keys and no others:
     {', '.join(required_list)}.
     - Do NOT include any notes, explanations, or extra properties.
-    - Do NOT change anything in the game configuration that is not being addressed in the player prompt.
+    - Do NOT change anything in the game configuration that is not being addressed in the player {last_scored_player} prompt, "{user_prompt}".
     - Only change what is needed from the previous configuration:
     {json.dumps(previous_config.to_dict())}.
     {f"- Avoid errors similar to the last configuration issue: {error}" if error is not None else ""}
-    - The `change_summary` must be a short sentence (under 12 words) describing the difference between the previous and new configuration.
     </instructions>
 
     <json_scheme>
@@ -156,7 +157,7 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
     </output_contract>
 
     <output>
-    Respond ONLY with the valid JSON object containing all required properties.
+    Respond ONLY with the valid JSON object containing all required properties. Use the following prompt from player {last_scored_player} to change the game configuration: "{user_prompt}".
     </output>
     """
 
@@ -174,8 +175,6 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
 
             error = None
 
-            print("try #", retry_count)
-
             result = response.choices[0].message.content.lower()
 
             # Remove think tag
@@ -191,8 +190,6 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
             cleaned_result = cleaned_result.replace(
                 '```', '').replace('json', '').replace('<response>', '').replace('functools', '')
 
-            print(cleaned_result)
-
             cleaned_result_json: dict = json.loads(cleaned_result)
 
             # If needed add missing keys
@@ -207,8 +204,6 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
 
         except json.JSONDecodeError as e:
             error = f"JSONDecodeError: Failed to parse JSON from model response. Error: {e}\nContent that caused the error: '{cleaned_result}'"
-
-            print(error)
 
             retry_count += 1
 

@@ -1,6 +1,6 @@
 # 🕹️ Prompt Pong
 
-This interactive two-player game of pong showcases the on-device inferencing capabilities of the Snapdragon X Elite platform. Players compete and the round's winner can dynamically alter the game environment by prompting an on-device large language model (LLM). This real-time sample demonstrates how local AI processing can enable adaptive gameplay, personalized experiences, and low-latency decision-making all without relying on cloud connectivity.
+This interactive two-player game of pong showcases the on-device inferencing capabilities of the Snapdragon X Elite platform and Microsoft Foundry Local. Players compete and the round's winner can dynamically alter the game environment by prompting an on-device large language model (LLM). This real-time sample demonstrates how local AI processing can enable adaptive gameplay, personalized experiences, and low-latency decision-making all without relying on cloud connectivity.
 
 
 ## Requirements
@@ -25,6 +25,7 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     - You can find the SDK on the [Qualcomm Software Center](https://softwarecenter.qualcomm.com/)
 4. Install the required Python packages
     - Run the command `pip install -r requirements.txt`
+    - Make sure you are in the `src/pong` directory
 
 
 ## Usage
@@ -32,10 +33,10 @@ This interactive two-player game of pong showcases the on-device inferencing cap
 1. Make sure you have first followed the [Requirements](#requirements) and [Installation Instructions](#installation-instructions) steps above
 2. Start the game of pong with the command: `python main.py`
     - Make sure you are in the `src/pong` directory
-3. The player controls are as follows:
-    - Player 1 (player on the left): 'W' for up and 'S' for down
-    - Player 2 (player on the right): 'Up Arrow' for up and 'Down Arrow' for down
-4. Between scoring points, the winner of the round is asked to provide a prompt to change the game. An on-device LLM will re-generate the Pong game based on the prompt. After 5 points, the game will end!
+3. Controls:
+    - Player 1 (left paddle): 'W' for up and 'S' for down
+    - Player 2 (right paddle): 'Up Arrow' for up and 'Down Arrow' for down
+4. After a point is scored, the winner of the round is asked to provide a prompt to change the game. An on-device LLM will re-generate the Pong game based on the prompt. After 5 points, the game will end!
 
 <details>
     <summary>Technical Details</summary>
@@ -44,7 +45,7 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     <ul>
         <li><a href="https://www.pygame.org/docs/" target="_blank">pygame</a>: a package for Python game development</li>
         <li><a href="https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/how-to/how-to-integrate-with-inference-sdks?pivots=programming-language-python" target="_blank">foundry_local</a>: a package that interfaces with Microsoft's Foundry Local SDK</li>
-        <li><a href="https://github.com/openai/openai-python" target="_blank">openai</a>: a simple package for interacting with the foundry_local models</li>
+        <li><a href="https://github.com/openai/openai-python" target="_blank">openai</a>: a package integrated with  foundry_local models to simplify model inferencing</li>
     </ul>
     <p>The game is composed of three Python files:</p>
     <ul>

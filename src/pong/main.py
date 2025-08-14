@@ -62,7 +62,7 @@ original_config_dict: dict[str, Any] = {
     "change_summary": "",
 }
 
-game_config: GameConfig = GameConfig(original_config_dict)
+game_config: GameConfig = GameConfig(**original_config_dict)
 
 
 SCREEN_WIDTH: int = 800
@@ -227,24 +227,24 @@ def show_start_screen() -> None:
             if event.type == pygame.KEYDOWN:
                 waiting_for_start = False
 
-        screen.fill(game_config.background_color)
+        screen.fill(game_config.background_color.to_pygame_color())
 
         # Title
         title_text = large_font.render(
-            "Prompt Pong!", True, game_config.text_color)
+            "Prompt Pong!", True, game_config.text_color.to_pygame_color())
         title_rect = title_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
         screen.blit(title_text, title_rect)
 
         # Instructions
         start_instruction_text = normal_font.render(
-            "Press any key to start", True, game_config.text_color)
+            "Press any key to start", True, game_config.text_color.to_pygame_color())
         start_instruction_rect = start_instruction_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
         screen.blit(start_instruction_text, start_instruction_rect)
 
         credit_text = small_font.render(
-            "Powered by Snapdragon X Elite", True, game_config.text_color)
+            "Powered by Snapdragon X Elite", True, game_config.text_color.to_pygame_color())
         credit_rect = credit_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
         screen.blit(credit_text, credit_rect)
@@ -268,16 +268,16 @@ def init_game_state(reset_score: bool = False) -> Tuple[Paddle, Paddle, Ball]:
     player1_paddle = Paddle(
         game_config.player_1_paddle_width,
         SCREEN_HEIGHT // 2 - game_config.player_1_paddle_height // 2,
-        game_config.player_1_paddle_width, game_config.player_1_paddle_height, game_config.player_1_paddle_speed, game_config.player_1_paddle_color
+        game_config.player_1_paddle_width, game_config.player_1_paddle_height, game_config.player_1_paddle_speed, game_config.player_1_paddle_color.to_pygame_color()
     )
     player2_paddle = Paddle(
         SCREEN_WIDTH - game_config.player_2_paddle_width * 2,
         SCREEN_HEIGHT // 2 - game_config.player_2_paddle_height // 2,
-        game_config.player_2_paddle_width, game_config.player_2_paddle_height, game_config.player_2_paddle_speed, game_config.player_2_paddle_color
+        game_config.player_2_paddle_width, game_config.player_2_paddle_height, game_config.player_2_paddle_speed, game_config.player_2_paddle_color.to_pygame_color()
     )
 
     ball = Ball(
-        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, game_config.ball_radius, game_config.ball_initial_speed, game_config.ball_color
+        SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, game_config.ball_radius, game_config.ball_initial_speed, game_config.ball_color.to_pygame_color()
     )
     ball.reset(last_scored_player)
 
@@ -397,16 +397,16 @@ while running:
                 input_active = True
 
     # Clear screen
-    screen.fill(game_config.background_color)
+    screen.fill(game_config.background_color.to_pygame_color())
 
     player1_paddle.draw()
     player2_paddle.draw()
     ball.draw()
 
     score_text1 = large_font.render(
-        f"Player 1: {player1_score}", True, game_config.text_color)
+        f"Player 1: {player1_score}", True, game_config.text_color.to_pygame_color())
     score_text2 = large_font.render(
-        f"Player 2: {player2_score}", True, game_config.text_color)
+        f"Player 2: {player2_score}", True, game_config.text_color.to_pygame_color())
 
     screen.blit(score_text1, (SCREEN_WIDTH // 4 -
                 score_text1.get_width() // 2, 20))
@@ -418,7 +418,7 @@ while running:
         prompt_text: str = f"Player {last_scored_player} scored! Enter a prompt to change the game! (Press ENTER):"
 
         prompt_render = normal_font.render(
-            prompt_text, True, game_config.text_color)
+            prompt_text, True, game_config.text_color.to_pygame_color())
         prompt_rect = prompt_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
 
@@ -426,18 +426,18 @@ while running:
 
         input_display_text = input_string + "_"  # Add cursor
 
-        render_wrapped_text(screen, input_display_text, normal_font, game_config.text_color, game_config.text_background_color,
+        render_wrapped_text(screen, input_display_text, normal_font, game_config.text_color.to_pygame_color(), game_config.text_background_color.to_pygame_color(),
                             SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20, SCREEN_WIDTH // 2)
 
     # Countdown screen before a round begins
     if countdown_active:
         countdown_render = normal_font.render(
-            f"Round starting in {current_countdown}...", True, game_config.text_color)
+            f"Round starting in {current_countdown}...", True, game_config.text_color.to_pygame_color())
         countdown_rect = countdown_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))
 
         ball_direction_render = large_font.render(
-            "->" if last_scored_player == 1 else "<-", True, game_config.text_color)
+            "->" if last_scored_player == 1 else "<-", True, game_config.text_color.to_pygame_color())
         ball_direction_rect = ball_direction_render.get_rect(
             center=((SCREEN_WIDTH // 4) * (3 if last_scored_player ==
                     1 else 1), SCREEN_HEIGHT // 2 - 2))
@@ -446,14 +446,14 @@ while running:
         screen.blit(ball_direction_render, ball_direction_rect)
 
         if game_config.change_summary != "":
-            render_wrapped_text(screen, f"Changes: {game_config.change_summary}", normal_font, game_config.text_color, None,
+            render_wrapped_text(screen, f"Changes: {game_config.change_summary}", normal_font, game_config.text_color.to_pygame_color(), None,
                                 SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + (game_config.ball_radius + 15), SCREEN_WIDTH * 0.75)
 
         current_countdown -= 1
 
     if model_loading:
         model_loading_render = normal_font.render(
-            "The on-device model is generating your game!", True, game_config.text_color)
+            "The on-device model is generating your game!", True, game_config.text_color.to_pygame_color())
         model_loading_rect = model_loading_render.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 50))
 
@@ -463,13 +463,13 @@ while running:
     if not game_active and not input_active and not countdown_active:
         if player1_score >= MAX_SCORE:
             game_over_text = large_font.render(
-                "Player 1 Wins!", True, game_config.text_color)
+                "Player 1 Wins!", True, game_config.text_color.to_pygame_color())
         else:
             game_over_text = large_font.render(
-                "Player 2 Wins!", True, game_config.text_color)
+                "Player 2 Wins!", True, game_config.text_color.to_pygame_color())
 
         restart_text = small_font.render(
-            "Press 'R' to Restart or 'Q' to Quit", True, game_config.text_color)
+            "Press 'R' to Restart or 'Q' to Quit", True, game_config.text_color.to_pygame_color())
 
         game_over_rect = game_over_text.get_rect(
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))

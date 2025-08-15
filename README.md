@@ -14,7 +14,7 @@ This repository contains sample apps for running ONNX models efficiently using [
 |------------------------|------------|-----------|--------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|-------|
 | 'HRNet Pose Detection' | HRNetPose  | CPU       |[Complete](https://github.com/DerrickJ1612/qnn_sample_apps/tree/main/src/hrnet_pose)  |[Complete](https://github.com/DerrickJ1612/qnn_sample_apps/tree/main/notebooks/pose_detection)     | None  |
 | 'DeepSeek Local'       | DeepSeek   | QNN       |[Complete](https://github.com/DerrickJ1612/qnn_sample_apps/tree/main/src/deepseek_r1) |[Complete](https://github.com/DerrickJ1612/qnn_sample_apps/tree/main/notebooks/reasoning_llm)      | None  |
-| 'Prompt Pong'       | DeepSeek   | CPU/QNN       | [Complete](./src/pong/) | ❌      | An example using Microsoft Foundry Local. Compatible with other LLM models  |
+| 'Prompt Pong'       | Phi   | CPU       | [Complete](./src/pong/) | ❌      | An example using Ollama. Compatible with other LLM models  |
 
 These apps demonstrate end-to-end inference using ONNX Runtime on devices with Hexagon NPUs. Each app includes:
 - Input preprocessing

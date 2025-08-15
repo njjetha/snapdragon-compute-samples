@@ -1,28 +1,30 @@
 # 🕹️ Prompt Pong
 
-This interactive two-player game of pong showcases the on-device inferencing capabilities of the Snapdragon X Elite platform and Microsoft Foundry Local. Players compete and the round's winner can dynamically alter the game environment by prompting an on-device large language model (LLM). This real-time sample demonstrates how local AI processing can enable adaptive gameplay, personalized experiences, and low-latency decision-making all without relying on cloud connectivity.
+This interactive two-player game of pong showcases the on-device inferencing capabilities of the Snapdragon X Elite platform and Ollama. Players compete and the round's winner can dynamically alter the game environment by prompting an on-device large language model (LLM). This real-time sample demonstrates how local AI processing can enable adaptive gameplay, personalized experiences, and low-latency decision-making all without relying on cloud connectivity.
 
 
 ## Requirements
+
 ### Hardware
-1. A device with a Qualcomm [Snapdragon X Elite Processor](https://www.qualcomm.com/products/mobile/snapdragon/laptops-and-tablets/snapdragon-x-elite) (or QNN compatible NPU)
+
+1. A device with a Qualcomm [Snapdragon X Elite Processor](https://www.qualcomm.com/products/mobile/snapdragon/laptops-and-tablets/snapdragon-x-elite)
+    - While other laptops are compatible, they may not deliver the same level of performance or responsiveness as those powered by the Snapdragon X Elite processor
 
 
 ### Software
 
 1. [Python 3.13](https://www.python.org/)
-2. [Microsoft Foundry Local](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/)
-3. [Qualcomm® Neural Processing SDK](https://www.qualcomm.com/developer/software/neural-processing-sdk-for-ai)
+2. [Ollama](https://ollama.com/)
 
 
 ## Installation Instructions
 
 1. Clone this Github Repository directly on your Snapdragon X Elite device
     - Use a command such as `git clone https://github.com/qualcomm/snapdragon-compute-samples.git`
-2. Install Microsoft Foundry local
-    - Follow these [instructions](https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/get-started)
-3. Install Qualcomm® Neural Processing SDK
-    - You can find the SDK on the [Qualcomm Software Center](https://softwarecenter.qualcomm.com/)
+2. Install Ollama
+    - Download and install Ollama [here](https://ollama.com/download)
+3. Install the Phi3 on-device model with Ollama
+    - Run the command `ollama pull phi3:3.8b`
 4. Install the required Python packages
     - Run the command `pip install -r requirements.txt`
     - Make sure you are in the `src/pong` directory
@@ -44,8 +46,8 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     <p>Prompt Pong is completely designed in Python. The main Python packages used are:</p>
     <ul>
         <li><a href="https://www.pygame.org/docs/" target="_blank">pygame</a>: a package for Python game development</li>
-        <li><a href="https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/how-to/how-to-integrate-with-inference-sdks?pivots=programming-language-python" target="_blank">foundry_local</a>: a package that interfaces with Microsoft's Foundry Local SDK</li>
-        <li><a href="https://github.com/openai/openai-python" target="_blank">openai</a>: a package integrated with  foundry_local models to simplify model inferencing</li>
+        <li><a href="https://github.com/ollama/ollama-python" target="_blank">ollama</a>: a package that interfaces with on-device LLM models</li>
+        <li><a href="https://docs.pydantic.dev/latest/" target="_blank">pydantic</a>: a package integrated with ollama to provide better structured outputs from LLMs</li>
     </ul>
     <p>The game is composed of three Python files:</p>
     <ul>
@@ -55,9 +57,9 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     </ul>
     <h3>Model Inferencing</h3>
     <img src="./images/prompt_pong_model_sequence.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
-    <p>Between points being scored, the winner of that round is asked to provide a prompt to change the game. Once the player sends a prompt, the prompt and previous game configuration are sent to a Foundry Local model on a separate thread. Once the model returns the new game configuration, the game loop and game logic are re-rendered and the game continues until 5 points are scored.</p>
+    <p>Between points being scored, the winner of that round is asked to provide a prompt to change the game. Once the player sends a prompt, the prompt and previous game configuration are sent to an Ollama model on a separate thread. Once the model returns the new game configuration and is validated, the game loop and game logic are re-rendered and the game continues until 5 points are scored.</p>
     <h4>System Prompt Methodology</h4>
-    <p>When designing the prompt for the Foundry Local model, it was important to first understand the <a href="https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-local/reference/reference-rest" target="_blank">constraints and parameters</a>. A low temperature and set max_tokens were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added. The final prompt was created based on system prompts of other popular ai tools.</p>
+    <p>When designing the prompt for the Ollama model, it was important to first understand the <a href="https://ollama.com/blog/structured-outputs" target="_blank">how structured outputs are implemented</a> on Ollama. A low temperature, set num_ctx, and higher repeat_penalty were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added. The final prompt was created based on system prompts of other popular ai tools.</p>
 </details>
 
 

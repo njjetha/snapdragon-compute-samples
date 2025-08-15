@@ -11,10 +11,7 @@ from game_config import GameConfig
 from pydantic import ValidationError
 
 
-MODEL_NAME: str = "gemma3:4b-it-qat"
-
-
-print("Loading Ollama model...")
+MODEL_NAME: str = "phi3:3.8b"
 
 
 def generate_game_config(user_prompt: str, last_scored_player: int, previous_config: GameConfig) -> GameConfig:

@@ -23,8 +23,8 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     - Use a command such as `git clone https://github.com/qualcomm/snapdragon-compute-samples.git`
 2. Install Ollama
     - Download and install Ollama [here](https://ollama.com/download)
-3. Install the Phi3 on-device model with Ollama
-    - Run the command `ollama pull phi3:3.8b`
+3. Install the Qwen2.5 Coder on-device model with Ollama
+    - Run the command `ollama pull qwen2.5-coder:3b`
 4. Install the required Python packages
     - Run the command `pip install -r requirements.txt`
     - Make sure you are in the `src/pong` directory
@@ -59,7 +59,7 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     <img src="./images/prompt_pong_model_sequence.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
     <p>Between points being scored, the winner of that round is asked to provide a prompt to change the game. Once the player sends a prompt, the prompt and previous game configuration are sent to an Ollama model on a separate thread. Once the model returns the new game configuration and is validated, the game loop and game logic are re-rendered and the game continues until 5 points are scored.</p>
     <h4>System Prompt Methodology</h4>
-    <p>When designing the prompt for the Ollama model, it was important to first understand the <a href="https://ollama.com/blog/structured-outputs" target="_blank">how structured outputs are implemented</a> on Ollama. A low temperature, set num_ctx, and higher repeat_penalty were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added. The final prompt was created based on system prompts of other popular ai tools.</p>
+    <p>When designing the prompt for the Ollama model, it was important to first understand the <a href="https://ollama.com/blog/structured-outputs" target="_blank">how structured outputs are implemented</a> on Ollama. A low temperature, set num_ctx, and higher repeat_penalty were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added.</p>
 </details>
 
 

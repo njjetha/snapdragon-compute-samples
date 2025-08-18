@@ -11,7 +11,7 @@ from game_config import GameConfig
 from pydantic import ValidationError
 
 
-MODEL_NAME: str = "phi3:3.8b"
+MODEL_NAME: str = "qwen2.5-coder:3b"
 
 
 def generate_game_config(user_prompt: str, last_scored_player: int, previous_config: GameConfig) -> GameConfig:
@@ -28,7 +28,6 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
     <instructions>
     - Use the following prompt from player {last_scored_player} to change the game configuration: "{user_prompt}".
     - Do NOT change anything in the game configuration that is not being addressed in the player {last_scored_player} prompt, "{user_prompt}".
-    - Do NOT change any colors unless asked to by the player's prompt.
     - Do NOT send back the previous configuration without changing the configuration according to the player's prompt.
     - ONLY change what is needed from the previous configuration:
     {previous_config.model_dump_json()}.
@@ -59,10 +58,6 @@ def generate_game_config(user_prompt: str, last_scored_player: int, previous_con
             )
 
             result = response.message.content
-
-            print("Try #", retry_count)
-
-            print(result)
 
             error = None
 

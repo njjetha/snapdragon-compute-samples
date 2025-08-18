@@ -434,7 +434,7 @@ while running:
         countdown_render = normal_font.render(
             f"Round starting in {current_countdown}...", True, game_config.text_color.to_pygame_color())
         countdown_rect = countdown_render.get_rect(
-            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - (game_config.ball_radius + 15)))
 
         ball_direction_render = large_font.render(
             "->" if last_scored_player == 1 else "<-", True, game_config.text_color.to_pygame_color())

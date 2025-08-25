@@ -40,28 +40,41 @@ This interactive two-player game of pong showcases the on-device inferencing cap
     - Player 2 (right paddle): 'Up Arrow' for up and 'Down Arrow' for down
 4. After a point is scored, the winner of the round is asked to provide a prompt to change the game. An on-device LLM will re-generate the Pong game based on the prompt. After 5 points, the game will end!
 
-<details>
-    <summary>Technical Details</summary>
-    <h3>Tech Stack Overview</h3>
-    <p>Prompt Pong is completely designed in Python. The main Python packages used are:</p>
-    <ul>
-        <li><a href="https://www.pygame.org/docs/" target="_blank">pygame</a>: a package for Python game development</li>
-        <li><a href="https://github.com/ollama/ollama-python" target="_blank">ollama</a>: a package that interfaces with on-device LLM models</li>
-        <li><a href="https://docs.pydantic.dev/latest/" target="_blank">pydantic</a>: a package integrated with ollama to provide better structured outputs from LLMs</li>
-    </ul>
-    <p>The game is composed of three Python files:</p>
-    <ul>
-        <li><a href="./main.py" target="_blank">main.py</a>: contains the main game loop and game logic</li>
-        <li><a href="./model_inference.py" target="_blank">model_inference.py</a>: contains the actual inferencing of the on-device models</li>
-        <li><a href="./game_config.py" target="_blank">game_config.py</a>: contains a class that configures the Pong game</li>
-    </ul>
-    <h3>Model Inferencing</h3>
-    <img src="./images/prompt_pong_model_sequence.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
-    <p>Between points being scored, the winner of that round is asked to provide a prompt to change the game. Once the player sends a prompt, the prompt and previous game configuration are sent to an Ollama model on a separate thread. Once the model returns the new game configuration and is validated, the game loop and game logic are re-rendered and the game continues until 5 points are scored.</p>
-    <h4>System Prompt Methodology</h4>
-    <p>When designing the prompt for the Ollama model, it was important to first understand the <a href="https://ollama.com/blog/structured-outputs" target="_blank">how structured outputs are implemented</a> on Ollama. A low temperature, set num_ctx, and higher repeat_penalty were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added.</p>
-</details>
+## Technical Details
 
+### Tech Stack Overview
+
+Prompt Pong is completely designed in Python. The main Python packages used are:
+
+- [pygame](https://www.pygame.org/docs/): a package for Python game development
+- [ollama](https://github.com/ollama/ollama-python): a package that interfaces with on-device LLM models
+- [pydantic](https://docs.pydantic.dev/latest/): a package integrated with ollama to provide better structured outputs from LLMs
+
+The game is composed of three Python files:
+
+- [main.py](./main.py): contains the main game loop and game logic
+- [model_inference.py](./model_inference.py): contains the actual inferencing of the on-device models
+- [game_config.py](./game_config.py): contains a class that configures the Pong game
+
+### Model Inferencing
+
+<img src="./images/prompt_pong_model_sequence.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
+
+Between points being scored, the winner of that round is asked to provide a prompt to change the game. Once the player sends a prompt, the prompt and previous game configuration are sent to an Ollama model on a separate thread. Once the model returns the new game configuration and is validated, the game loop and game logic are re-rendered and the game continues until 5 points are scored.
+
+#### System Prompt Methodology
+
+<p>When designing the prompt for the Ollama model, it was important to first understand the <a href="https://ollama.com/blog/structured-outputs" target="_blank">how structured outputs are implemented</a> on Ollama. A low temperature, set num_ctx, and higher repeat_penalty were used to ensure consistent and accurate results. To enure that the model properly returns the structured data needed, several additional checks were added.</p>
+
+## Screenshots
+
+<img src="./images/prompt_pong_base.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
+
+The base game before any prompts.
+
+<img src="./images/prompt_pong_changed.png" style="min-width: 480px; max-width: 65%; height: auto;"/>
+
+The game after a few rounds of prompts!
 
 ## License
 
